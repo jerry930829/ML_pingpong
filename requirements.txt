@@ -1,0 +1,6 @@
+mlgame>=10.4.6a2
+ 
+# 以下為訓練 Decision Tree 所需套件
+scikit-learn>=1.2.0
+joblib>=1.2.0
+pandas>=1.3.0
