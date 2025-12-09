@@ -1,0 +1,14 @@
+{
+  "total_failed_matches": 10,
+  "landing_dx_bins": {
+    ">50": 10
+  },
+  "ball_speed_buckets": {
+    "10": 10
+  },
+  "final_cmd_counts": {
+    "MOVE_LEFT": 10
+  },
+  "moved_last5_fraction": 1.0,
+  "avg_move_flips": 1.0
+}

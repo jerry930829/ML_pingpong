@@ -1,0 +1,14 @@
+name: pingpong-train
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - numpy=2.2.6
+  - pandas=2.3.3
+  - scikit-learn
+  - joblib
+  - pygame
+  - pip:
+    - -r requirements.txt

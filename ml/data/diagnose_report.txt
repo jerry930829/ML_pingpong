@@ -1,0 +1,11 @@
+                precision    recall  f1-score   support
+
+          NONE       0.80      0.90      0.85       873
+     MOVE_LEFT       0.97      0.94      0.95      4312
+    MOVE_RIGHT       0.96      0.96      0.96      4767
+ SERVE_TO_LEFT       0.81      0.81      0.81        16
+SERVE_TO_RIGHT       0.88      0.91      0.89        32
+
+      accuracy                           0.95     10000
+     macro avg       0.88      0.90      0.89     10000
+  weighted avg       0.95      0.95      0.95     10000

@@ -1,0 +1,14 @@
+name: pingpong-runtime
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - numpy=1.23.5
+  - pandas=1.4.1
+  - pygame
+  - pip:
+    - mlgame==10.7.1
+    - joblib
+    - scikit-learn
