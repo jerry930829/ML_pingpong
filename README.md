@@ -245,6 +245,8 @@ scene_info (球、平台、狀態)
 # 建立並啟動訓練環境（若尚未建立）
 conda env create -f .\envs\pingpong-train.yml
 conda activate pingpong-train
+# 若pandas出現版本錯誤，請執行：
+pip install --upgrade --force-reinstall --no-cache-dir "pandas>=2.0.3"
 ```
 
 ---
