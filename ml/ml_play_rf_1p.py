@@ -126,7 +126,7 @@ class MLPlay:
             landing_dx = pred_landing_x - self_px
             # Increased threshold from 8 to 15 to account for slice ball edge cases
             # and provide better margin for prediction error
-            if abs(landing_dx) <= 20:
+            if abs(landing_dx) <= 5:
                 desired = 'NONE'
             else:
                 desired = 'MOVE_LEFT' if self_px > pred_landing_x else 'MOVE_RIGHT'

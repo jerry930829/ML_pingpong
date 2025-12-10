@@ -5,6 +5,7 @@ channels:
 dependencies:
   - python=3.10
   - pip
+  - mlgame
   - numpy=2.2.6
   - pandas=2.3.3
   - scikit-learn
