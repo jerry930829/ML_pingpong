@@ -145,7 +145,7 @@ model_path (str): 儲存的模型檔案路徑 (例如 'ml/models/rf_1p.joblib')�
 
 #### 輸入
 
-  `scene`          場景 dict
+  `scene_info`     場景 dict
 
   `max_steps`      最大模擬步數
 
