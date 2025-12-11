@@ -7,8 +7,6 @@
 
 -   [`ml_play_rf_1p.py`](#ml_play_rf_1ppy--隨機森林一號玩家-ai)
 -   [`ml_play_rf_2p.py`](#ml_play_rf_2ppy--隨機森林二號玩家-ai)
--   [`rf_1p_agent.py`](#rf_1p_agentpy--一號玩家核心機器學習代理)
--   [`rf_2p_agent.py`](#rf_2p_agentpy--二號玩家核心機器學習代理)
 -   [`landing.py`](#landingpy--落點預測引擎-v2)
 
 
@@ -68,6 +66,7 @@
 
 重設內部狀態（比賽重新開始時由 mlgame 呼叫）
 
+
 ------------------------------------------------------------------------
 
 # `ml_play_rf_2p.py` --- 隨機森林二號玩家 AI
@@ -80,42 +79,11 @@
 
 ------------------------------------------------------------------------
 
-## `update(scene_info) → action (str)`
-
-輸入/輸出與 1P 版本完全相同。
-
-------------------------------------------------------------------------
-
-# `rf_1p_agent.py` --- 一號玩家核心機器學習代理
-
-## 功能
-
-封裝 Random Forest 模型推論邏輯，負責：
-
--   特徵提取
-
--   Pandas DataFrame 建立
-
--   模型預測
-
--   平滑化行動（smoothing）
-
--   動作轉換（int → string）
-
-
-## 類別
-
-### `RF1PAgent(model_path)`
-
-------------------------------------------------------------------------
-
-## 方法
-
 ### `predict(scene_info) → action (str)`
 
 #### 輸入
 
-同 `ml_play_rf_1p.py` 的 scene_info。
+同 `update(scene_info)` 的 scene_info。
 
 #### 輸出
 
@@ -129,34 +97,14 @@
 
 -   `"SERVE_TO_RIGHT"`
 
+### `reset()`
 
-#### 動作流程
-
-1.  從 scene_info 萃取特徵\
-
-2.  建立 DataFrame\
-
-3.  `model.predict()` 得到 **整數標籤**\
-
-4.  使用 smoothing 過濾震盪\
-
-5.  將整數標籤轉換為字串動作
-
+重設內部狀態（比賽重新開始時由 mlgame 呼叫）
 
 ------------------------------------------------------------------------
 
-# `rf_2p_agent.py` --- 二號玩家核心機器學習代理
 
-與 1P 版本相同，但：
-
--   使用 2P 的模型
--   特徵鏡像（從 2P 視角觀察球）
-
-其他 API 完全一致。
-
-------------------------------------------------------------------------
-
-# `landing.py` --- 落點預測引擎
+# `landing.py` --- 落點預測
 
 ## 功能
 
@@ -167,7 +115,6 @@
 -   返回最後會落在哪個 x 位置（landing X）
 -   避免高速球穿透平台
 -   使用 LRU cache（快 10～30 倍）
--   相容舊 API
 
 ------------------------------------------------------------------------
 
@@ -212,51 +159,67 @@ agent
 
 # PingPong ML 系統架構
 
-## 高層流程圖
+## Breakdown
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    ML 訓練流程（train_pipeline.py）              │
-└─────────────────────────────────────────────────────────────────┘
-                           ↓
-        ┌──────────────────┬──────────────────┐
-        ↓                  ↓                  ↓
-   ╔════════════╗   ╔════════════╗    ╔════════════╗
-   ║ 數據收集    ║   ║ 特徵工程    ║    ║ 模型訓練    ║
-   ╚════════════╝   ╚════════════╝    ╚════════════╝
-   - collect_auto  - augment_features - train_rf_1p
-   - collect_       (landing_dx,       - train_rf_2p
-     targeted       ball_speed_abs)    
-   - 30k 行數據    - 19 特徵         - 100 樹深度 12
-                                       
-        ↓                               ↓
-   ┌──────────────────┐          ┌──────────────────┐
-   │ ml/data/         │          │ ml/models/       │
-   │ ├─ play_data_    │          │ ├─ rf_1p.joblib  │
-   │ │  auto.csv      │          │ └─ rf_2p.joblib  │
-   │ ├─ play_data_    │          └──────────────────┘
-   │ │  targeted.csv  │                    ↓
-   │ └─ play_data_    │          ╔════════════════════╗
-   │    auto_aug.csv  │          ║ 推理（Runtime）    ║
-   └──────────────────┘          ╚════════════════════╝
-                                 - ml_play_rf_1p.py
-                                 - ml_play_rf_2p.py
-                                   (landing_dx=15px)
-                                        ↓
-                                 ┌──────────────────┐
-                                 │ 遊戲引擎           │
-                                 │ (src/game.py)    │
-                                 └──────────────────┘
-                                        ↓
-                                 ╔════════════════════╗
-                                 ║ 遊戲玩法           ║
-                                 ║ (evaluate或visual) ║
-                                 ╚════════════════════╝
+```mermaid
+graph TD
+    subgraph ML_TRAINING[ ]
+        A[數據收集] --> B(特徵工程);
+        B --> C[模型訓練];
+        A --> |輸出: ml/data/| D(數據文件);
+        C --> |輸出: ml/models/| E(模型文件);
+
+        style A fill:#4CAF50,color:#fff
+        style B fill:#FF9800,color:#000
+        style C fill:#2196F3,color:#fff
+    end
+
+    subgraph DATA_FILES[數據文件]
+        D --> D1[play_data_auto.csv];
+        D --> D2[play_data_targeted.csv];
+        D --> D3[play_data_auto_aug.csv];
+    end
+
+    subgraph MODEL_FILES[模型文件]
+        E --> E1[rf_1p.joblib];
+        E --> E2[rf_2p.joblib];
+    end
+    
+    subgraph INFERENCE[推理]
+        F(Agent 程式) --> G(遊戲引擎);
+        G --> H(遊戲玩法/評估);
+
+        style F fill:#9C27B0,color:#fff
+        style G fill:#00BCD4,color:#fff
+    end
+
+    D3 --> |訓練輸入| C;
+    E1 --> |使用| F;
+    E2 --> |使用| F;
+    
+    F --> |動作 | G;
+    G --> |scene_info| F;
+    
+    subgraph FEATURE_DETAIL[細節]
+        B --> B1{Landing_dx};
+        B --> B2{Ball_speed_abs};
+    end
+    
+    subgraph AGENT_DETAIL[Agent 細節]
+        F --> F1[ml_play_rf_1p.py];
+        F --> F2[ml_play_rf_2p.py];
+        F1 --> F1a(Landing_dx 容限=15px);
+    end
+
+    C --> C1{train_rf_1p};
+    C --> C2{train_rf_2p};
+    
+    A & B & C & D & E --> INFERENCE;
 ```
 
 ---
 
-## 模塊詳解
+## ML說明
 
 ### 1. 遊戲引擎層 (`src/`)
 
@@ -572,5 +535,3 @@ A: 如果要改模型配置（n_estimators, max_depth）或重新收集數據，
 
 **Q: 數據可以重用嗎？**  
 A: 是的。如果只改 Agent 邏輯（landing_dx容限等），不需重新訓練，直接修改 `ml_play_rf_1p.py` 重啟遊戲。
-
-
