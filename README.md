@@ -183,8 +183,8 @@ agent
 ```mermaid
 graph TD
     subgraph ML_TRAINING[ ]
-        A[數據收集] --> B(特徵工程);
-        B --> C[模型訓練];
+        A[數據收集 collect_data_auto.py ] --> B(特徵工程);
+        B --> C[模型訓練 train_random_forest.py ];
         A --> |輸出: ml/data/| D(數據文件);
         C --> |輸出: ml/models/| E(模型文件);
 
@@ -229,9 +229,6 @@ graph TD
         F --> F2[ml_play_rf_2p.py];
         F1 --> F1a(Landing_dx 容限=15px);
     end
-
-    C --> C1{train_rf_1p};
-    C --> C2{train_rf_2p};
     
     A & B & C & D & E --> INFERENCE;
 ```
