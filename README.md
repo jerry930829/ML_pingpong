@@ -1,3 +1,5 @@
+![image](game.gif)
+
 # ML PingPong ---  API 說明
 
 
@@ -7,6 +9,7 @@
 
 -   [`ml_play_rf_1p.py`](#ml_play_rf_1ppy--隨機森林一號玩家-ai)
 -   [`ml_play_rf_2p.py`](#ml_play_rf_2ppy--隨機森林二號玩家-ai)
+-   [`train_random_forest.py.py`](#隨機森林訓練-ai)
 -   [`landing.py`](#landingpy--落點預測引擎-v2)
 
 
@@ -102,7 +105,23 @@
 重設內部狀態（比賽重新開始時由 mlgame 呼叫）
 
 ------------------------------------------------------------------------
+# `train_random_forest.py` --- 隨機森林訓練-ai
 
+#### 輸入
+player_side (str): '1P' 或 '2P'。
+
+n_estimators (int): 樹的數量。
+
+max_depth (int): 樹的深度。
+
+balance (bool): 是否進行資料平衡。
+
+class_weight (bool): 是否使用類別權重。
+
+#### 輸出
+model_path (str): 儲存的模型檔案路徑 (例如 'ml/models/rf_1p.joblib')。
+
+------------------------------------------------------------------------
 
 # `landing.py` --- 落點預測
 
@@ -297,13 +316,59 @@ RandomForestClassifier(
     class_weight='balanced'
 )
 ```
+## 詳細步驟解析
 
-**1P 定向訓練** (`retrain_1p_targeted.py`)
-- 融合: `play_data_auto_aug.csv` + `play_data_targeted.csv × multiplier`
-- `multiplier=3`: 難例重複 3 次，提升權重
-- 輸出: `ml/models/rf_1p.joblib`
+### 步驟一：資料載入與過濾 (Data Loading & Filtering)
+* **來源**：讀取 `data/play_data_auto.csv`。
+* **玩家區分**：函式 `train_for(player_side)` 強制區分 `'1P'` 與 `'2P'`。
+    * *原因*：1P（左側）與 2P（右側）的座標視角不同，動作邏輯相反，因此必須分開訓練兩個獨立的模型。
 
-**決策樹訓練** (同樣配置，較少用)
+### 步驟二：特徵工程 (Feature Engineering)
+程式碼定義了兩類特徵：
+1.  **基礎物理特徵 (`BASE_FEATURES`)**：
+    * `ball_x`, `ball_y` (球位置)
+    * `ball_vx`, `ball_vy` (球速度)
+    * `self_px`, `opp_px` (雙方板子 Y 座標)
+    * `blocker_x` (障礙物，若有的話)
+    * `pred_landing_x` (預測落點)
+2.  **歷史特徵 (`HISTORY_FEATURES`)**：
+    * 包含前 1 幀與前 2 幀的球速與位置 (`prev1_...`, `prev2_...`)。
+    * *目的*：讓隨機森林能夠捕捉時間序列上的趨勢（例如加速度或變向）。
+
+**標籤編碼 (Label Encoding)**：
+* 將文字動作轉換為整數索引：
+    * `NONE` -> 0
+    * `MOVE_LEFT` -> 1
+    * `MOVE_RIGHT` -> 2
+    * ...以此類推。
+
+### 步驟三：資料切分 (Train-Test Split)
+使用 `sklearn.model_selection.train_test_split`：
+* **訓練集 (Train Set)**：80% 資料，用於訓練。
+* **測試集 (Test Set)**：20% 資料，用於驗證成效。
+* `random_state=42`：確保每次切分結果一致。
+
+### 步驟四：處理資料不平衡 (Handling Class Imbalance)
+這是此腳本最關鍵的部分，因為遊戲中「移動」的次數遠多於「發球」。
+
+#### 方法 A：手動過採樣 (Manual Oversampling)
+* **觸發條件**：執行時帶入 `--balance` 參數。
+* **邏輯**：
+    1.  找出訓練集中樣本數最多的類別（Majority Class）。
+    2.  針對其他少數類別（Minority Classes），使用 `sklearn.utils.resample` 進行 **有放回抽樣 (Replace=True)**。
+    3.  將所有類別的樣本數強制拉升至與最大類別相同。
+    4.  *優點*：確保模型充分學習到稀少動作（如發球）。
+
+#### 方法 B：權重調整 (Class Weights)
+* **觸發條件**：執行時帶入 `--class_weight` 參數。
+* **邏輯**：設定 `class_weight='balanced'`，讓演算法在計算 Loss 時，自動給予稀少類別較高的懲罰權重。
+
+### 步驟五：模型訓練 (Model Training)
+使用 `RandomForestClassifier` 建立模型：
+* **`n_estimators`** (預設 100)：決策樹的數量。
+* **`max_depth`** (預設 12)：限制樹的深度，防止過度擬合 (Overfitting)。
+* **`n_jobs=-1`**：啟用所有 CPU 核心平行運算加速。
+
 
 ---
 
