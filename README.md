@@ -216,7 +216,7 @@ flowchart TD
 ---
 
 ## 如何驗收
-
+![P1](asset/final.gif)
 - **功能驗收**
   - 1P / 2P 都使用 RF 模型：
     - 指令示意 (以 MLGame 執行為例)：
