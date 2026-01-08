@@ -51,8 +51,7 @@ class MLPlay:
         if status != "GAME_ALIVE":
             self.ball_served = False
             return "RESET"
-
-        # 尚未發球時，才使用 RF 來決定發球方向
+ 
         if not self.ball_served:
             features_vec = build_feature_vector_2p(scene_info)
             features = features_vec.reshape(1, -1)
@@ -65,7 +64,6 @@ class MLPlay:
             self.ball_served = True
             return "SERVE_TO_LEFT"
 
-        # 球在場上時，完全依照物理落點預測移動板子（與 recorder 策略一致）
         features_vec = build_feature_vector_2p(scene_info)
         pred_x = float(features_vec[-1])
 
